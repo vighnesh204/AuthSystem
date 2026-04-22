@@ -1,4 +1,5 @@
 import userModel from "../models/user.model";
+import crypto from 'crypto'
 
 const register = async (req, res) => {
 
@@ -17,5 +18,12 @@ const register = async (req, res) => {
         })
     }
 
-    
+    const hashedPassword = crypto.createHash("sha256").update(password).digest('hex');
+
+    const user = await userModel.create({
+        username, 
+        email, 
+        password: hashedPassword
+    })
+
 }
