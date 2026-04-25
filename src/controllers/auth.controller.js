@@ -2,6 +2,7 @@ import userModel from "../models/user.model.js";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import config from "../config/config.js";
+import e from "express";
 
 export const register = async (req, res) => {
   const { username, email, password } = req.body;
@@ -84,5 +85,31 @@ export const getMe = async (req, res) => {
       user: user.username,
       email: user.email
     }
+  })
+}
+
+export const refreshToken = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(401).json({
+      message: "Refresh token not found",
+    });
+  }
+
+  const decoded = jwt.verify(refreshToken, config.JWT_SECRET)
+
+  const accessToken = jwt.sign(
+    {
+      id: decoded.id,
+    },
+    config.JWT_SECRET,
+    {
+      expiresIn: "15m",
+    },
+  );
+  res.status(200).json({
+    message: "Access token refreshed successfully",
+    accessToken
   })
 }
