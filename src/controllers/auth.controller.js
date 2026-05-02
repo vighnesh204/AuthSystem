@@ -38,7 +38,10 @@ export const register = async (req, res) => {
     },
   );
 
-  const refreshTokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
+  const refreshTokenHash = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
   const session = await sessionModel.create({
     user: user._id,
     refreshTokenHash,
@@ -107,8 +110,13 @@ export const refreshToken = async (req, res) => {
 
   const decoded = jwt.verify(refreshToken, config.JWT_SECRET);
 
-  const refreshTokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
-  const session = await sessionModel.findOne({ refreshTokenHash, revoked: false }).populate("user");
+  const refreshTokenHash = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
+  const session = await sessionModel
+    .findOne({ refreshTokenHash, revoked: false })
+    .populate("user");
 
   if (!session) {
     return res.status(401).json({
@@ -136,7 +144,10 @@ export const refreshToken = async (req, res) => {
     },
   );
 
-  const newRefreshTokenHash = crypto.createHash("sha256").update(newRefreshToken).digest("hex");
+  const newRefreshTokenHash = crypto
+    .createHash("sha256")
+    .update(newRefreshToken)
+    .digest("hex");
   session.refreshTokenHash = newRefreshTokenHash;
   await session.save();
   res.cookie("refreshToken", newRefreshToken, {
@@ -160,8 +171,14 @@ export const logout = async (req, res) => {
       message: "Refresh token not found",
     });
   }
-  const refreshTokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
-  const session = await sessionModel.findOne({ refreshTokenHash, revoked: false });
+  const refreshTokenHash = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
+  const session = await sessionModel.findOne({
+    refreshTokenHash,
+    revoked: false,
+  });
   if (!session) {
     return res.status(400).json({
       message: "Invalid refresh token",
@@ -173,4 +190,25 @@ export const logout = async (req, res) => {
   res.status(200).json({
     message: "Logged out successfully",
   });
-}
+};
+
+export const logoutAll = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(400).json({
+      message: "Refresh token not found",
+    });
+  }
+
+  const decoded = jwt.verify(refreshToken, config.JWT_SECRET);
+
+  await sessionModel.updateMany(
+    { user: decoded.id, revoked: false },
+    { revoked: true },
+  );
+  res.clearCookie("refreshToken");
+  res.status(200).json({
+    message: "Logged out from all sessions successfully",
+  });
+};
